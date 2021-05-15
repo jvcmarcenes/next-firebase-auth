@@ -15,6 +15,6 @@ export default function PostView({ posts }: Props) {
   </>
 
   return <>
-    {posts.map((post: any) => <Post post={post} />)}
+    {posts.map((post: any) => <Post key={post.id} post={post} />)}
   </>
 }

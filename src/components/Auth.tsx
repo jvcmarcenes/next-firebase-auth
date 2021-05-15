@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import Router from 'next/router'
 import firebase from '../lib/firebase'
+import { server } from "../config";
 
 interface Context {
   user: User
@@ -31,37 +32,35 @@ export default function AuthProvider({ children }: Props) {
   </authContext.Provider>
 }
 
-async function formatUser(user: firebase.User): Promise<User> {
-  return {
-    uid: user.uid,
-    email: user.email,
-    name: user.displayName,
-    provider: user.providerData[0]?.providerId,
-    photoUrl: user.photoURL
-  }
-}
-
 function useFirebaseAuth() {
   const [ user, setUser ] = useState<User>(null)
   const [ loading, setLoading ] = useState<boolean>(true)
 
-  async function handleUser(rawUser: firebase.User | null) {
-    if (!rawUser) {
+  async function handleUser(userIn: firebase.User | null) {
+    if (!userIn) {
       setUser(null)
       setLoading(false)
-      return null
+      return // null
     }
 
-    const user = await formatUser(rawUser)
+    // gets or creates the user
+    const res = await fetch(`${server}/api/user`, {
+      method: 'POST',
+      body: JSON.stringify({
+        uid: userIn.uid,
+        email: userIn.email,
+        name: userIn.displayName,
+        provider: userIn.providerData[0]?.providerId,
+        photoUrl: userIn.photoURL
+      })
+    })
+    const user: User = await res.json()
 
-    if (!user) return null
-
-    // const { uid } = user
-    // createUser(user.uid, userWithoutToken) // api call to register user
+    if (!user) return
 
     setUser(user)
     setLoading(false)
-    return user
+    // return user
   }
 
   async function signInWithGoogle(redirect?: string) {
